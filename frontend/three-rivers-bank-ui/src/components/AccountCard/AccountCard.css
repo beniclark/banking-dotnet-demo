@@ -1,0 +1,104 @@
+.account-card {
+  background: white;
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 1px solid #e2e8f0;
+  position: relative;
+  overflow: hidden;
+}
+
+.account-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+}
+
+.account-card.checking::before {
+  background: linear-gradient(90deg, #1a365d, #3182ce);
+}
+
+.account-card.savings::before {
+  background: linear-gradient(90deg, #276749, #48bb78);
+}
+
+.account-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+}
+
+.account-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.account-icon {
+  width: 44px;
+  height: 44px;
+  background: #f7fafc;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #1a365d;
+}
+
+.account-icon svg {
+  width: 24px;
+  height: 24px;
+}
+
+.account-type-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  background: #edf2f7;
+  color: #4a5568;
+}
+
+.account-card-body {
+  margin-bottom: 1.5rem;
+}
+
+.account-name {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1a202c;
+  margin: 0 0 0.25rem 0;
+}
+
+.account-number {
+  font-size: 0.875rem;
+  color: #718096;
+  margin: 0;
+  font-family: 'Monaco', 'Menlo', monospace;
+}
+
+.account-card-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.balance-label {
+  font-size: 0.8rem;
+  color: #718096;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.balance-amount {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #1a365d;
+}

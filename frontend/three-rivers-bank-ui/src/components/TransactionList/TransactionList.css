@@ -1,0 +1,96 @@
+.transaction-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.transaction-list-empty {
+  text-align: center;
+  padding: 3rem;
+  color: #718096;
+}
+
+.transaction-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1rem 0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.transaction-item:last-child {
+  border-bottom: none;
+}
+
+.transaction-icon {
+  width: 44px;
+  height: 44px;
+  background: #f7fafc;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.transaction-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.transaction-main {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 0.25rem;
+}
+
+.transaction-description {
+  font-weight: 500;
+  color: #1a202c;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.transaction-amount {
+  font-weight: 600;
+  font-size: 1.05rem;
+  white-space: nowrap;
+}
+
+.transaction-amount.credit {
+  color: #276749;
+}
+
+.transaction-amount.debit {
+  color: #c53030;
+}
+
+.transaction-meta {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.85rem;
+  color: #718096;
+}
+
+.transaction-category {
+  background: #edf2f7;
+  padding: 0.125rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.transaction-date {
+  color: #a0aec0;
+}
+
+.transaction-reference {
+  font-size: 0.75rem;
+  color: #a0aec0;
+  margin-top: 0.25rem;
+  font-family: 'Monaco', 'Menlo', monospace;
+}

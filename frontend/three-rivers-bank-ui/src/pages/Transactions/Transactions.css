@@ -1,0 +1,137 @@
+.transactions-page {
+  min-height: 100vh;
+  background: #f7fafc;
+}
+
+.transactions-content {
+  padding: 2rem;
+}
+
+.transactions-container {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.page-header {
+  margin-bottom: 2rem;
+}
+
+.page-header h1 {
+  font-size: 2rem;
+  color: #1a202c;
+  margin: 0 0 0.5rem 0;
+}
+
+.page-header p {
+  color: #718096;
+  margin: 0;
+}
+
+/* Account Selector */
+.account-selector {
+  margin-bottom: 1.5rem;
+}
+
+.account-selector label {
+  display: block;
+  font-weight: 500;
+  color: #4a5568;
+  margin-bottom: 0.5rem;
+}
+
+.account-selector select {
+  width: 100%;
+  max-width: 400px;
+  padding: 0.875rem 1rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 1rem;
+  background: white;
+  cursor: pointer;
+}
+
+.account-selector select:focus {
+  outline: none;
+  border-color: #3182ce;
+}
+
+/* Account Summary Card */
+.account-summary-card {
+  background: linear-gradient(135deg, #1a365d 0%, #2d4a7c 100%);
+  color: white;
+  border-radius: 16px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.summary-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.summary-label {
+  font-size: 0.8rem;
+  opacity: 0.8;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.summary-value {
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.summary-value.highlight {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+/* Transactions Card */
+.transactions-card {
+  background: white;
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  min-height: 400px;
+}
+
+/* Loading & Error States */
+.loading-state,
+.error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  gap: 1rem;
+  color: #718096;
+}
+
+.loading-spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid #e2e8f0;
+  border-top-color: #1a365d;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .transactions-content {
+    padding: 1rem;
+  }
+
+  .account-summary-card {
+    flex-direction: column;
+  }
+}
