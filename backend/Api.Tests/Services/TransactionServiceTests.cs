@@ -6,10 +6,10 @@ using Xunit;
 
 namespace ThreeRiversBank.Api.Tests.Services;
 
-public class TransactionServiceTests
+public class TransactionServiceTests : IDisposable
 {
     private readonly TransactionService _sut;
-    private readonly BankingDataStore _dataStore;
+    private readonly TestDatabaseFactory _dbFactory;
 
     // Known demo account IDs
     private readonly Guid _sarahCheckingId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
@@ -17,8 +17,13 @@ public class TransactionServiceTests
 
     public TransactionServiceTests()
     {
-        _dataStore = new BankingDataStore();
-        _sut = new TransactionService(_dataStore);
+        _dbFactory = new TestDatabaseFactory();
+        _sut = new TransactionService(_dbFactory.DbContext);
+    }
+
+    public void Dispose()
+    {
+        _dbFactory.Dispose();
     }
 
     #region GetTransactionsByAccountIdAsync Tests
@@ -86,8 +91,8 @@ public class TransactionServiceTests
     public async Task TransferFundsAsync_WithValidRequest_TransfersFunds()
     {
         // Arrange
-        var fromAccountBefore = _dataStore.Accounts.First(a => a.Id == _sarahCheckingId);
-        var toAccountBefore = _dataStore.Accounts.First(a => a.Id == _sarahSavingsId);
+        var fromAccountBefore = _dbFactory.DbContext.Accounts.First(a => a.Id == _sarahCheckingId);
+        var toAccountBefore = _dbFactory.DbContext.Accounts.First(a => a.Id == _sarahSavingsId);
         var fromBalanceBefore = fromAccountBefore.Balance;
         var toBalanceBefore = toAccountBefore.Balance;
         var transferAmount = 100.00m;
@@ -110,8 +115,8 @@ public class TransactionServiceTests
         result.FromTransaction.Should().NotBeNull();
         result.ToTransaction.Should().NotBeNull();
 
-        var fromAccountAfter = _dataStore.Accounts.First(a => a.Id == _sarahCheckingId);
-        var toAccountAfter = _dataStore.Accounts.First(a => a.Id == _sarahSavingsId);
+        var fromAccountAfter = _dbFactory.DbContext.Accounts.First(a => a.Id == _sarahCheckingId);
+        var toAccountAfter = _dbFactory.DbContext.Accounts.First(a => a.Id == _sarahSavingsId);
 
         fromAccountAfter.Balance.Should().Be(fromBalanceBefore - transferAmount);
         toAccountAfter.Balance.Should().Be(toBalanceBefore + transferAmount);
@@ -260,7 +265,7 @@ public class TransactionServiceTests
     public async Task DepositAsync_WithValidRequest_DepositsAndCreatesTransaction()
     {
         // Arrange
-        var accountBefore = _dataStore.Accounts.First(a => a.Id == _sarahCheckingId);
+        var accountBefore = _dbFactory.DbContext.Accounts.First(a => a.Id == _sarahCheckingId);
         var balanceBefore = accountBefore.Balance;
         var depositAmount = 500.00m;
 
@@ -281,7 +286,7 @@ public class TransactionServiceTests
         result.Amount.Should().Be(depositAmount);
         result.Description.Should().Be("Test deposit");
 
-        var accountAfter = _dataStore.Accounts.First(a => a.Id == _sarahCheckingId);
+        var accountAfter = _dbFactory.DbContext.Accounts.First(a => a.Id == _sarahCheckingId);
         accountAfter.Balance.Should().Be(balanceBefore + depositAmount);
     }
 
@@ -380,7 +385,7 @@ public class TransactionServiceTests
     public async Task WithdrawAsync_WithValidRequest_WithdrawsAndCreatesTransaction()
     {
         // Arrange
-        var accountBefore = _dataStore.Accounts.First(a => a.Id == _sarahCheckingId);
+        var accountBefore = _dbFactory.DbContext.Accounts.First(a => a.Id == _sarahCheckingId);
         var balanceBefore = accountBefore.Balance;
         var withdrawAmount = 100.00m;
 
@@ -400,7 +405,7 @@ public class TransactionServiceTests
         result.Category.Should().Be("Withdrawal");
         result.Amount.Should().Be(withdrawAmount);
 
-        var accountAfter = _dataStore.Accounts.First(a => a.Id == _sarahCheckingId);
+        var accountAfter = _dbFactory.DbContext.Accounts.First(a => a.Id == _sarahCheckingId);
         accountAfter.Balance.Should().Be(balanceBefore - withdrawAmount);
     }
 

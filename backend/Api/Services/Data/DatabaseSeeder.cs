@@ -2,31 +2,30 @@ using ThreeRiversBank.Api.Models;
 
 namespace ThreeRiversBank.Api.Services.Data;
 
-public interface IBankingDataStore
+public static class DatabaseSeeder
 {
-    List<Customer> Customers { get; }
-    List<Account> Accounts { get; }
-    List<Transaction> Transactions { get; }
-    object Lock { get; }
-}
-
-public class BankingDataStore : IBankingDataStore
-{
-    public List<Customer> Customers { get; }
-    public List<Account> Accounts { get; }
-    public List<Transaction> Transactions { get; }
-    public object Lock { get; } = new();
-
-    public BankingDataStore()
+    public static void SeedDatabase(BankingDbContext context)
     {
-        Customers = InitializeCustomers();
-        Accounts = InitializeAccounts();
-        Transactions = InitializeTransactions();
+        // Ensure the database is created
+        context.Database.EnsureCreated();
+
+        // Only seed if the database is empty
+        if (context.Customers.Any())
+        {
+            return;
+        }
+
+        var customers = GetSeedCustomers();
+        var accounts = GetSeedAccounts();
+        var transactions = GetSeedTransactions();
+
+        context.Customers.AddRange(customers);
+        context.Accounts.AddRange(accounts);
+        context.Transactions.AddRange(transactions);
+        context.SaveChanges();
     }
 
-    #region Demo Data Initialization
-
-    private static List<Customer> InitializeCustomers()
+    private static List<Customer> GetSeedCustomers()
     {
         return new List<Customer>
         {
@@ -78,7 +77,7 @@ public class BankingDataStore : IBankingDataStore
         };
     }
 
-    private static List<Account> InitializeAccounts()
+    private static List<Account> GetSeedAccounts()
     {
         return new List<Account>
         {
@@ -160,7 +159,7 @@ public class BankingDataStore : IBankingDataStore
         };
     }
 
-    private static List<Transaction> InitializeTransactions()
+    private static List<Transaction> GetSeedTransactions()
     {
         var transactions = new List<Transaction>();
         var baseDate = DateTime.UtcNow;
@@ -171,7 +170,7 @@ public class BankingDataStore : IBankingDataStore
         {
             new Transaction
             {
-                Id = Guid.NewGuid(),
+                Id = Guid.Parse("10000001-0001-0001-0001-000000000001"),
                 AccountId = sarahCheckingId,
                 TransactionType = "Credit",
                 Category = "Deposit",
@@ -185,7 +184,7 @@ public class BankingDataStore : IBankingDataStore
             },
             new Transaction
             {
-                Id = Guid.NewGuid(),
+                Id = Guid.Parse("10000001-0001-0001-0001-000000000002"),
                 AccountId = sarahCheckingId,
                 TransactionType = "Debit",
                 Category = "Purchase",
@@ -199,7 +198,7 @@ public class BankingDataStore : IBankingDataStore
             },
             new Transaction
             {
-                Id = Guid.NewGuid(),
+                Id = Guid.Parse("10000001-0001-0001-0001-000000000003"),
                 AccountId = sarahCheckingId,
                 TransactionType = "Debit",
                 Category = "Payment",
@@ -213,7 +212,7 @@ public class BankingDataStore : IBankingDataStore
             },
             new Transaction
             {
-                Id = Guid.NewGuid(),
+                Id = Guid.Parse("10000001-0001-0001-0001-000000000004"),
                 AccountId = sarahCheckingId,
                 TransactionType = "Debit",
                 Category = "Purchase",
@@ -227,7 +226,7 @@ public class BankingDataStore : IBankingDataStore
             },
             new Transaction
             {
-                Id = Guid.NewGuid(),
+                Id = Guid.Parse("10000001-0001-0001-0001-000000000005"),
                 AccountId = sarahCheckingId,
                 TransactionType = "Debit",
                 Category = "Purchase",
@@ -247,7 +246,7 @@ public class BankingDataStore : IBankingDataStore
         {
             new Transaction
             {
-                Id = Guid.NewGuid(),
+                Id = Guid.Parse("10000002-0002-0002-0002-000000000001"),
                 AccountId = michaelCheckingId,
                 TransactionType = "Credit",
                 Category = "Deposit",
@@ -261,7 +260,7 @@ public class BankingDataStore : IBankingDataStore
             },
             new Transaction
             {
-                Id = Guid.NewGuid(),
+                Id = Guid.Parse("10000002-0002-0002-0002-000000000002"),
                 AccountId = michaelCheckingId,
                 TransactionType = "Debit",
                 Category = "Purchase",
@@ -275,13 +274,14 @@ public class BankingDataStore : IBankingDataStore
             },
             new Transaction
             {
-                Id = Guid.NewGuid(),
+                Id = Guid.Parse("10000002-0002-0002-0002-000000000003"),
                 AccountId = michaelCheckingId,
                 TransactionType = "Debit",
                 Category = "Transfer",
                 Amount = 500.00m,
                 BalanceAfter = 543.45m,
                 Description = "Transfer to Savings",
+                Merchant = "",
                 TransactionDate = baseDate.AddDays(-6),
                 Status = "Completed",
                 ReferenceNumber = "TRB202312020003"
@@ -294,7 +294,7 @@ public class BankingDataStore : IBankingDataStore
         {
             new Transaction
             {
-                Id = Guid.NewGuid(),
+                Id = Guid.Parse("10000003-0003-0003-0003-000000000001"),
                 AccountId = emilyCheckingId,
                 TransactionType = "Credit",
                 Category = "Deposit",
@@ -308,7 +308,7 @@ public class BankingDataStore : IBankingDataStore
             },
             new Transaction
             {
-                Id = Guid.NewGuid(),
+                Id = Guid.Parse("10000003-0003-0003-0003-000000000002"),
                 AccountId = emilyCheckingId,
                 TransactionType = "Debit",
                 Category = "Payment",
@@ -322,7 +322,7 @@ public class BankingDataStore : IBankingDataStore
             },
             new Transaction
             {
-                Id = Guid.NewGuid(),
+                Id = Guid.Parse("10000003-0003-0003-0003-000000000003"),
                 AccountId = emilyCheckingId,
                 TransactionType = "Debit",
                 Category = "Purchase",
@@ -336,7 +336,7 @@ public class BankingDataStore : IBankingDataStore
             },
             new Transaction
             {
-                Id = Guid.NewGuid(),
+                Id = Guid.Parse("10000003-0003-0003-0003-000000000004"),
                 AccountId = emilyCheckingId,
                 TransactionType = "Debit",
                 Category = "Purchase",
@@ -352,6 +352,4 @@ public class BankingDataStore : IBankingDataStore
 
         return transactions;
     }
-
-    #endregion
 }

@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using ThreeRiversBank.Api.Models;
 using ThreeRiversBank.Api.Services.Data;
 using ThreeRiversBank.Api.Services.Interfaces;
@@ -6,62 +7,60 @@ namespace ThreeRiversBank.Api.Services;
 
 public class TransactionService : ITransactionService
 {
-    private readonly IBankingDataStore _dataStore;
+    private readonly BankingDbContext _dbContext;
 
-    public TransactionService(IBankingDataStore dataStore)
+    public TransactionService(BankingDbContext dbContext)
     {
-        _dataStore = dataStore;
+        _dbContext = dbContext;
     }
 
-    public Task<List<Transaction>> GetTransactionsByAccountIdAsync(Guid accountId, int count = 50)
+    public async Task<List<Transaction>> GetTransactionsByAccountIdAsync(Guid accountId, int count = 50)
     {
-        var transactions = _dataStore.Transactions
+        return await _dbContext.Transactions
             .Where(t => t.AccountId == accountId)
             .OrderByDescending(t => t.TransactionDate)
             .Take(count)
-            .ToList();
-
-        return Task.FromResult(transactions);
+            .ToListAsync();
     }
 
-    public Task<Transaction?> GetTransactionByIdAsync(Guid transactionId)
+    public async Task<Transaction?> GetTransactionByIdAsync(Guid transactionId)
     {
-        var transaction = _dataStore.Transactions.FirstOrDefault(t => t.Id == transactionId);
-        return Task.FromResult(transaction);
+        return await _dbContext.Transactions.FirstOrDefaultAsync(t => t.Id == transactionId);
     }
 
-    public Task<TransferResult> TransferFundsAsync(TransferRequest request)
+    public async Task<TransferResult> TransferFundsAsync(TransferRequest request)
     {
-        lock (_dataStore.Lock)
+        await using var transaction = await _dbContext.Database.BeginTransactionAsync();
+        try
         {
-            var fromAccount = _dataStore.Accounts.FirstOrDefault(a => a.Id == request.FromAccountId);
-            var toAccount = _dataStore.Accounts.FirstOrDefault(a => a.Id == request.ToAccountId);
+            var fromAccount = await _dbContext.Accounts.FirstOrDefaultAsync(a => a.Id == request.FromAccountId);
+            var toAccount = await _dbContext.Accounts.FirstOrDefaultAsync(a => a.Id == request.ToAccountId);
 
             if (fromAccount == null || toAccount == null)
             {
-                return Task.FromResult(new TransferResult
+                return new TransferResult
                 {
                     Success = false,
                     Message = "One or both accounts not found"
-                });
+                };
             }
 
             if (fromAccount.Balance < request.Amount)
             {
-                return Task.FromResult(new TransferResult
+                return new TransferResult
                 {
                     Success = false,
                     Message = "Insufficient funds"
-                });
+                };
             }
 
             if (request.Amount <= 0)
             {
-                return Task.FromResult(new TransferResult
+                return new TransferResult
                 {
                     Success = false,
                     Message = "Transfer amount must be greater than zero"
-                });
+                };
             }
 
             var referenceNumber = GenerateReferenceNumber();
@@ -79,7 +78,7 @@ public class TransactionService : ITransactionService
                 Amount = request.Amount,
                 BalanceAfter = fromAccount.Balance,
                 Description = string.IsNullOrEmpty(request.Description)
-                    ? $"Transfer to account ending in {toAccount.AccountNumber[^4..]}"
+                    ? $"Transfer to account ending in {toAccount.AccountNumber.Substring(toAccount.AccountNumber.Length - 4)}"
                     : request.Description,
                 TransactionDate = DateTime.UtcNow,
                 Status = "Completed",
@@ -99,40 +98,49 @@ public class TransactionService : ITransactionService
                 Amount = request.Amount,
                 BalanceAfter = toAccount.Balance,
                 Description = string.IsNullOrEmpty(request.Description)
-                    ? $"Transfer from account ending in {fromAccount.AccountNumber[^4..]}"
+                    ? $"Transfer from account ending in {fromAccount.AccountNumber.Substring(fromAccount.AccountNumber.Length - 4)}"
                     : request.Description,
                 TransactionDate = DateTime.UtcNow,
                 Status = "Completed",
                 ReferenceNumber = referenceNumber
             };
 
-            _dataStore.Transactions.Add(fromTransaction);
-            _dataStore.Transactions.Add(toTransaction);
+            _dbContext.Transactions.Add(fromTransaction);
+            _dbContext.Transactions.Add(toTransaction);
 
-            return Task.FromResult(new TransferResult
+            await _dbContext.SaveChangesAsync();
+            await transaction.CommitAsync();
+
+            return new TransferResult
             {
                 Success = true,
                 Message = "Transfer completed successfully",
                 ReferenceNumber = referenceNumber,
                 FromTransaction = fromTransaction,
                 ToTransaction = toTransaction
-            });
+            };
+        }
+        catch
+        {
+            await transaction.RollbackAsync();
+            throw;
         }
     }
 
-    public Task<Transaction?> DepositAsync(DepositRequest request)
+    public async Task<Transaction?> DepositAsync(DepositRequest request)
     {
-        lock (_dataStore.Lock)
+        await using var transaction = await _dbContext.Database.BeginTransactionAsync();
+        try
         {
-            var account = _dataStore.Accounts.FirstOrDefault(a => a.Id == request.AccountId);
-            if (account == null) return Task.FromResult<Transaction?>(null);
+            var account = await _dbContext.Accounts.FirstOrDefaultAsync(a => a.Id == request.AccountId);
+            if (account == null) return null;
 
-            if (request.Amount <= 0) return Task.FromResult<Transaction?>(null);
+            if (request.Amount <= 0) return null;
 
             account.Balance += request.Amount;
             account.AvailableBalance += request.Amount;
 
-            var transaction = new Transaction
+            var depositTransaction = new Transaction
             {
                 Id = Guid.NewGuid(),
                 AccountId = account.Id,
@@ -146,25 +154,34 @@ public class TransactionService : ITransactionService
                 ReferenceNumber = GenerateReferenceNumber()
             };
 
-            _dataStore.Transactions.Add(transaction);
-            return Task.FromResult<Transaction?>(transaction);
+            _dbContext.Transactions.Add(depositTransaction);
+            await _dbContext.SaveChangesAsync();
+            await transaction.CommitAsync();
+
+            return depositTransaction;
+        }
+        catch
+        {
+            await transaction.RollbackAsync();
+            throw;
         }
     }
 
-    public Task<Transaction?> WithdrawAsync(WithdrawalRequest request)
+    public async Task<Transaction?> WithdrawAsync(WithdrawalRequest request)
     {
-        lock (_dataStore.Lock)
+        await using var transaction = await _dbContext.Database.BeginTransactionAsync();
+        try
         {
-            var account = _dataStore.Accounts.FirstOrDefault(a => a.Id == request.AccountId);
-            if (account == null) return Task.FromResult<Transaction?>(null);
+            var account = await _dbContext.Accounts.FirstOrDefaultAsync(a => a.Id == request.AccountId);
+            if (account == null) return null;
 
             if (request.Amount <= 0 || account.Balance < request.Amount)
-                return Task.FromResult<Transaction?>(null);
+                return null;
 
             account.Balance -= request.Amount;
             account.AvailableBalance -= request.Amount;
 
-            var transaction = new Transaction
+            var withdrawalTransaction = new Transaction
             {
                 Id = Guid.NewGuid(),
                 AccountId = account.Id,
@@ -178,8 +195,16 @@ public class TransactionService : ITransactionService
                 ReferenceNumber = GenerateReferenceNumber()
             };
 
-            _dataStore.Transactions.Add(transaction);
-            return Task.FromResult<Transaction?>(transaction);
+            _dbContext.Transactions.Add(withdrawalTransaction);
+            await _dbContext.SaveChangesAsync();
+            await transaction.CommitAsync();
+
+            return withdrawalTransaction;
+        }
+        catch
+        {
+            await transaction.RollbackAsync();
+            throw;
         }
     }
 

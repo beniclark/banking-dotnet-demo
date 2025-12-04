@@ -14,7 +14,8 @@ Three Rivers Bank is a fictional retail banking application that demonstrates mo
 - **.NET 10** - Latest .NET framework
 - **C#** - Primary programming language
 - **Minimal APIs** - Modern API design pattern
-- **In-memory data store** - For demo purposes
+- **Entity Framework Core** - ORM for data access
+- **SQLite In-Memory** - Lightweight database for demo purposes
 
 ### Frontend
 - **React 18** - UI library
@@ -35,7 +36,8 @@ banking-dotnet-demo/
 │       │   └── Transaction.cs
 │       ├── Services/
 │       │   ├── Data/
-│       │   │   └── BankingDataStore.cs    # Shared in-memory data store
+│       │   │   ├── BankingDbContext.cs    # EF Core DbContext
+│       │   │   └── DatabaseSeeder.cs      # Seed data initialization
 │       │   ├── Interfaces/
 │       │   │   ├── IAccountService.cs
 │       │   │   ├── ICustomerService.cs
@@ -45,6 +47,7 @@ banking-dotnet-demo/
 │       │   └── TransactionService.cs      # Transaction domain operations
 │       └── Program.cs
 │   └── Api.Tests/
+│       ├── TestDatabaseFactory.cs         # Test database setup
 │       └── Services/
 │           ├── AccountServiceTests.cs
 │           ├── CustomerServiceTests.cs
@@ -70,7 +73,71 @@ The backend follows a **domain-driven modular architecture** with three main ser
 | `AccountService` | Account queries, balance summaries |
 | `TransactionService` | Transactions, transfers, deposits, withdrawals |
 
-All services share a common `BankingDataStore` for in-memory data persistence.
+### Data Layer
+
+The application uses **Entity Framework Core** with **SQLite in-memory database**:
+
+| Component | Description |
+|-----------|-------------|
+| `BankingDbContext` | EF Core DbContext with entity configurations |
+| `DatabaseSeeder` | Initializes the database with demo data on startup |
+
+The SQLite in-memory database is created fresh on each application start, seeded with demo customers, accounts, and transactions. This approach provides:
+- Real database operations with SQL queries
+- Transaction support for data integrity
+- Easy testing with isolated database instances
+- No external database dependencies
+
+### Database Schema
+
+```mermaid
+erDiagram
+    Customer {
+        guid Id PK
+        string FirstName
+        string LastName
+        string Email UK
+        string Phone
+        string Address
+        string City
+        string State
+        string ZipCode
+        datetime DateOfBirth
+        datetime CreatedDate
+        bool IsActive
+        string CustomerNumber UK
+    }
+    
+    Account {
+        guid Id PK
+        string AccountNumber UK
+        string AccountType
+        string AccountName
+        decimal Balance
+        decimal AvailableBalance
+        guid CustomerId FK
+        datetime OpenedDate
+        bool IsActive
+        string Currency
+    }
+    
+    Transaction {
+        guid Id PK
+        guid AccountId FK
+        string TransactionType
+        string Category
+        decimal Amount
+        decimal BalanceAfter
+        string Description
+        string Merchant
+        datetime TransactionDate
+        string Status
+        string ReferenceNumber
+    }
+    
+    Customer ||--o{ Account : "has"
+    Account ||--o{ Transaction : "has"
+```
 
 ## 🚀 Getting Started
 
@@ -150,7 +217,7 @@ The application comes with three pre-configured demo customers:
 
 1. **Add new feature**: "Add a bill payment feature"
 2. **Add authentication**: "Implement JWT authentication"
-3. **Add database**: "Connect to SQL Server database"
+3. **Migrate database**: "Connect to Azure SQL database"
 4. **Add tests**: "Write unit tests for the banking service"
 5. **Add validation**: "Add input validation to the transfer endpoint"
 6. **Refactor code**: "Extract account operations to a separate service"

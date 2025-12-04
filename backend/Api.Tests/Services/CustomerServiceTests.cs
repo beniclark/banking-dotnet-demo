@@ -5,10 +5,10 @@ using Xunit;
 
 namespace ThreeRiversBank.Api.Tests.Services;
 
-public class CustomerServiceTests
+public class CustomerServiceTests : IDisposable
 {
     private readonly CustomerService _sut;
-    private readonly BankingDataStore _dataStore;
+    private readonly TestDatabaseFactory _dbFactory;
 
     // Known demo customer IDs
     private readonly Guid _sarahId = Guid.Parse("11111111-1111-1111-1111-111111111111");
@@ -17,8 +17,13 @@ public class CustomerServiceTests
 
     public CustomerServiceTests()
     {
-        _dataStore = new BankingDataStore();
-        _sut = new CustomerService(_dataStore);
+        _dbFactory = new TestDatabaseFactory();
+        _sut = new CustomerService(_dbFactory.DbContext);
+    }
+
+    public void Dispose()
+    {
+        _dbFactory.Dispose();
     }
 
     #region GetCustomerByIdAsync Tests

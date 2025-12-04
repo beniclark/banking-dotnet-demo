@@ -1,3 +1,5 @@
+using Microsoft.Data.Sqlite;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using ThreeRiversBank.Api.Models;
 using ThreeRiversBank.Api.Services;
@@ -6,11 +8,18 @@ using ThreeRiversBank.Api.Services.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Create a single SQLite in-memory connection that stays open for the lifetime of the app
+var connection = new SqliteConnection("DataSource=:memory:");
+connection.Open();
+
+// Add DbContext with SQLite in-memory database
+builder.Services.AddDbContext<BankingDbContext>(options =>
+    options.UseSqlite(connection));
+
 // Add services to the container
-builder.Services.AddSingleton<IBankingDataStore, BankingDataStore>();
-builder.Services.AddSingleton<ICustomerService, CustomerService>();
-builder.Services.AddSingleton<IAccountService, AccountService>();
-builder.Services.AddSingleton<ITransactionService, TransactionService>();
+builder.Services.AddScoped<ICustomerService, CustomerService>();
+builder.Services.AddScoped<IAccountService, AccountService>();
+builder.Services.AddScoped<ITransactionService, TransactionService>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -37,6 +46,13 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
+// Seed the database with initial data
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<BankingDbContext>();
+    DatabaseSeeder.SeedDatabase(dbContext);
+}
 
 // Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())

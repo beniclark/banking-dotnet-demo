@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using ThreeRiversBank.Api.Models;
 using ThreeRiversBank.Api.Services.Data;
 using ThreeRiversBank.Api.Services.Interfaces;
@@ -6,28 +7,28 @@ namespace ThreeRiversBank.Api.Services;
 
 public class AccountService : IAccountService
 {
-    private readonly IBankingDataStore _dataStore;
+    private readonly BankingDbContext _dbContext;
 
-    public AccountService(IBankingDataStore dataStore)
+    public AccountService(BankingDbContext dbContext)
     {
-        _dataStore = dataStore;
+        _dbContext = dbContext;
     }
 
-    public Task<Account?> GetAccountByIdAsync(Guid accountId)
+    public async Task<Account?> GetAccountByIdAsync(Guid accountId)
     {
-        var account = _dataStore.Accounts.FirstOrDefault(a => a.Id == accountId);
-        return Task.FromResult(account);
+        return await _dbContext.Accounts.FirstOrDefaultAsync(a => a.Id == accountId);
     }
 
-    public Task<List<Account>> GetAccountsByCustomerIdAsync(Guid customerId)
+    public async Task<List<Account>> GetAccountsByCustomerIdAsync(Guid customerId)
     {
-        var accounts = _dataStore.Accounts.Where(a => a.CustomerId == customerId).ToList();
-        return Task.FromResult(accounts);
+        return await _dbContext.Accounts
+            .Where(a => a.CustomerId == customerId)
+            .ToListAsync();
     }
 
-    public Task<List<AccountSummary>> GetAccountSummariesByCustomerIdAsync(Guid customerId)
+    public async Task<List<AccountSummary>> GetAccountSummariesByCustomerIdAsync(Guid customerId)
     {
-        var summaries = _dataStore.Accounts
+        return await _dbContext.Accounts
             .Where(a => a.CustomerId == customerId)
             .Select(a => new AccountSummary
             {
@@ -37,14 +38,12 @@ public class AccountService : IAccountService
                 AccountName = a.AccountName,
                 Balance = a.Balance
             })
-            .ToList();
-
-        return Task.FromResult(summaries);
+            .ToListAsync();
     }
 
     private static string MaskAccountNumber(string accountNumber)
     {
         if (accountNumber.Length <= 4) return accountNumber;
-        return $"****{accountNumber[^4..]}";
+        return $"****{accountNumber.Substring(accountNumber.Length - 4)}";
     }
 }

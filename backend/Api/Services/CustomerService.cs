@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using ThreeRiversBank.Api.Models;
 using ThreeRiversBank.Api.Services.Data;
 using ThreeRiversBank.Api.Services.Interfaces;
@@ -6,25 +7,24 @@ namespace ThreeRiversBank.Api.Services;
 
 public class CustomerService : ICustomerService
 {
-    private readonly IBankingDataStore _dataStore;
+    private readonly BankingDbContext _dbContext;
 
-    public CustomerService(IBankingDataStore dataStore)
+    public CustomerService(BankingDbContext dbContext)
     {
-        _dataStore = dataStore;
+        _dbContext = dbContext;
     }
 
-    public Task<Customer?> GetCustomerByIdAsync(Guid customerId)
+    public async Task<Customer?> GetCustomerByIdAsync(Guid customerId)
     {
-        var customer = _dataStore.Customers.FirstOrDefault(c => c.Id == customerId);
-        return Task.FromResult(customer);
+        return await _dbContext.Customers.FirstOrDefaultAsync(c => c.Id == customerId);
     }
 
-    public Task<CustomerProfile?> GetCustomerProfileAsync(Guid customerId)
+    public async Task<CustomerProfile?> GetCustomerProfileAsync(Guid customerId)
     {
-        var customer = _dataStore.Customers.FirstOrDefault(c => c.Id == customerId);
-        if (customer == null) return Task.FromResult<CustomerProfile?>(null);
+        var customer = await _dbContext.Customers.FirstOrDefaultAsync(c => c.Id == customerId);
+        if (customer == null) return null;
 
-        var accounts = _dataStore.Accounts
+        var accounts = await _dbContext.Accounts
             .Where(a => a.CustomerId == customerId)
             .Select(a => new AccountSummary
             {
@@ -34,9 +34,9 @@ public class CustomerService : ICustomerService
                 AccountName = a.AccountName,
                 Balance = a.Balance
             })
-            .ToList();
+            .ToListAsync();
 
-        var profile = new CustomerProfile
+        return new CustomerProfile
         {
             Id = customer.Id,
             FullName = $"{customer.FirstName} {customer.LastName}",
@@ -45,18 +45,16 @@ public class CustomerService : ICustomerService
             MemberSince = customer.CreatedDate,
             Accounts = accounts
         };
-
-        return Task.FromResult<CustomerProfile?>(profile);
     }
 
-    public Task<List<Customer>> GetAllCustomersAsync()
+    public async Task<List<Customer>> GetAllCustomersAsync()
     {
-        return Task.FromResult(_dataStore.Customers.ToList());
+        return await _dbContext.Customers.ToListAsync();
     }
 
     private static string MaskAccountNumber(string accountNumber)
     {
         if (accountNumber.Length <= 4) return accountNumber;
-        return $"****{accountNumber[^4..]}";
+        return $"****{accountNumber.Substring(accountNumber.Length - 4)}";
     }
 }
