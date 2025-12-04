@@ -1,11 +1,16 @@
 using Microsoft.OpenApi.Models;
 using ThreeRiversBank.Api.Models;
 using ThreeRiversBank.Api.Services;
+using ThreeRiversBank.Api.Services.Data;
+using ThreeRiversBank.Api.Services.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container
-builder.Services.AddSingleton<IBankingService, BankingService>();
+builder.Services.AddSingleton<IBankingDataStore, BankingDataStore>();
+builder.Services.AddSingleton<ICustomerService, CustomerService>();
+builder.Services.AddSingleton<IAccountService, AccountService>();
+builder.Services.AddSingleton<ITransactionService, TransactionService>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -52,66 +57,66 @@ app.UseHttpsRedirection();
 var api = app.MapGroup("/api");
 
 // Customer endpoints
-api.MapGet("/customers", async (IBankingService bankingService) =>
+api.MapGet("/customers", async (ICustomerService customerService) =>
 {
-    var customers = await bankingService.GetAllCustomersAsync();
+    var customers = await customerService.GetAllCustomersAsync();
     return Results.Ok(customers);
 }).WithName("GetAllCustomers").WithTags("Customers");
 
-api.MapGet("/customers/{customerId:guid}", async (Guid customerId, IBankingService bankingService) =>
+api.MapGet("/customers/{customerId:guid}", async (Guid customerId, ICustomerService customerService) =>
 {
-    var customer = await bankingService.GetCustomerByIdAsync(customerId);
+    var customer = await customerService.GetCustomerByIdAsync(customerId);
     return customer is not null ? Results.Ok(customer) : Results.NotFound();
 }).WithName("GetCustomerById").WithTags("Customers");
 
-api.MapGet("/customers/{customerId:guid}/profile", async (Guid customerId, IBankingService bankingService) =>
+api.MapGet("/customers/{customerId:guid}/profile", async (Guid customerId, ICustomerService customerService) =>
 {
-    var profile = await bankingService.GetCustomerProfileAsync(customerId);
+    var profile = await customerService.GetCustomerProfileAsync(customerId);
     return profile is not null ? Results.Ok(profile) : Results.NotFound();
 }).WithName("GetCustomerProfile").WithTags("Customers");
 
 // Account endpoints
-api.MapGet("/customers/{customerId:guid}/accounts", async (Guid customerId, IBankingService bankingService) =>
+api.MapGet("/customers/{customerId:guid}/accounts", async (Guid customerId, IAccountService accountService) =>
 {
-    var accounts = await bankingService.GetAccountsByCustomerIdAsync(customerId);
+    var accounts = await accountService.GetAccountsByCustomerIdAsync(customerId);
     return Results.Ok(accounts);
 }).WithName("GetCustomerAccounts").WithTags("Accounts");
 
-api.MapGet("/accounts/{accountId:guid}", async (Guid accountId, IBankingService bankingService) =>
+api.MapGet("/accounts/{accountId:guid}", async (Guid accountId, IAccountService accountService) =>
 {
-    var account = await bankingService.GetAccountByIdAsync(accountId);
+    var account = await accountService.GetAccountByIdAsync(accountId);
     return account is not null ? Results.Ok(account) : Results.NotFound();
 }).WithName("GetAccountById").WithTags("Accounts");
 
 // Transaction endpoints
-api.MapGet("/accounts/{accountId:guid}/transactions", async (Guid accountId, int? count, IBankingService bankingService) =>
+api.MapGet("/accounts/{accountId:guid}/transactions", async (Guid accountId, int? count, ITransactionService transactionService) =>
 {
-    var transactions = await bankingService.GetTransactionsByAccountIdAsync(accountId, count ?? 50);
+    var transactions = await transactionService.GetTransactionsByAccountIdAsync(accountId, count ?? 50);
     return Results.Ok(transactions);
 }).WithName("GetAccountTransactions").WithTags("Transactions");
 
-api.MapGet("/transactions/{transactionId:guid}", async (Guid transactionId, IBankingService bankingService) =>
+api.MapGet("/transactions/{transactionId:guid}", async (Guid transactionId, ITransactionService transactionService) =>
 {
-    var transaction = await bankingService.GetTransactionByIdAsync(transactionId);
+    var transaction = await transactionService.GetTransactionByIdAsync(transactionId);
     return transaction is not null ? Results.Ok(transaction) : Results.NotFound();
 }).WithName("GetTransactionById").WithTags("Transactions");
 
 // Banking operations
-api.MapPost("/transfer", async (TransferRequest request, IBankingService bankingService) =>
+api.MapPost("/transfer", async (TransferRequest request, ITransactionService transactionService) =>
 {
-    var result = await bankingService.TransferFundsAsync(request);
+    var result = await transactionService.TransferFundsAsync(request);
     return result.Success ? Results.Ok(result) : Results.BadRequest(result);
 }).WithName("TransferFunds").WithTags("Banking Operations");
 
-api.MapPost("/deposit", async (DepositRequest request, IBankingService bankingService) =>
+api.MapPost("/deposit", async (DepositRequest request, ITransactionService transactionService) =>
 {
-    var transaction = await bankingService.DepositAsync(request);
+    var transaction = await transactionService.DepositAsync(request);
     return transaction is not null ? Results.Ok(transaction) : Results.BadRequest("Deposit failed");
 }).WithName("Deposit").WithTags("Banking Operations");
 
-api.MapPost("/withdraw", async (WithdrawalRequest request, IBankingService bankingService) =>
+api.MapPost("/withdraw", async (WithdrawalRequest request, ITransactionService transactionService) =>
 {
-    var transaction = await bankingService.WithdrawAsync(request);
+    var transaction = await transactionService.WithdrawAsync(request);
     return transaction is not null ? Results.Ok(transaction) : Results.BadRequest("Withdrawal failed");
 }).WithName("Withdraw").WithTags("Banking Operations");
 

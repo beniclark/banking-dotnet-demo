@@ -34,10 +34,23 @@ banking-dotnet-demo/
 │       │   ├── Customer.cs
 │       │   └── Transaction.cs
 │       ├── Services/
-│       │   └── BankingService.cs
+│       │   ├── Data/
+│       │   │   └── BankingDataStore.cs    # Shared in-memory data store
+│       │   ├── Interfaces/
+│       │   │   ├── IAccountService.cs
+│       │   │   ├── ICustomerService.cs
+│       │   │   └── ITransactionService.cs
+│       │   ├── AccountService.cs          # Account domain operations
+│       │   ├── CustomerService.cs         # Customer domain operations
+│       │   └── TransactionService.cs      # Transaction domain operations
 │       └── Program.cs
+│   └── Api.Tests/
+│       └── Services/
+│           ├── AccountServiceTests.cs
+│           ├── CustomerServiceTests.cs
+│           └── TransactionServiceTests.cs
 ├── frontend/
-│   └── three-rivers-bank-ui/
+│   └── ui/
 │       ├── src/
 │       │   ├── components/
 │       │   ├── pages/
@@ -46,6 +59,18 @@ banking-dotnet-demo/
 │       └── package.json
 └── README.md
 ```
+
+## 🏛️ Service Architecture
+
+The backend follows a **domain-driven modular architecture** with three main services:
+
+| Service | Responsibility |
+|---------|----------------|
+| `CustomerService` | Customer lookup, profile management |
+| `AccountService` | Account queries, balance summaries |
+| `TransactionService` | Transactions, transfers, deposits, withdrawals |
+
+All services share a common `BankingDataStore` for in-memory data persistence.
 
 ## 🚀 Getting Started
 
@@ -66,7 +91,7 @@ The API will start at `http://localhost:5000`
 ### Running the Frontend
 
 ```bash
-cd frontend/three-rivers-bank-ui
+cd frontend/ui
 npm install
 npm run dev
 ```

@@ -1,142 +1,27 @@
 using FluentAssertions;
 using ThreeRiversBank.Api.Models;
 using ThreeRiversBank.Api.Services;
+using ThreeRiversBank.Api.Services.Data;
 using Xunit;
 
 namespace ThreeRiversBank.Api.Tests.Services;
 
-public class BankingServiceTests
+public class TransactionServiceTests
 {
-    private readonly BankingService _sut;
-    
-    // Known demo customer IDs
-    private readonly Guid _sarahId = Guid.Parse("11111111-1111-1111-1111-111111111111");
-    private readonly Guid _michaelId = Guid.Parse("22222222-2222-2222-2222-222222222222");
-    private readonly Guid _emilyId = Guid.Parse("33333333-3333-3333-3333-333333333333");
-    
+    private readonly TransactionService _sut;
+    private readonly BankingDataStore _dataStore;
+
     // Known demo account IDs
     private readonly Guid _sarahCheckingId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
     private readonly Guid _sarahSavingsId = Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
 
-    public BankingServiceTests()
+    public TransactionServiceTests()
     {
-        _sut = new BankingService();
+        _dataStore = new BankingDataStore();
+        _sut = new TransactionService(_dataStore);
     }
 
-    #region Customer Operations Tests
-
-    [Fact]
-    public async Task GetCustomerByIdAsync_WithValidId_ReturnsCustomer()
-    {
-        // Act
-        var result = await _sut.GetCustomerByIdAsync(_sarahId);
-
-        // Assert
-        result.Should().NotBeNull();
-        result!.FirstName.Should().Be("Sarah");
-        result.LastName.Should().Be("Johnson");
-        result.Email.Should().Be("sarah.johnson@email.com");
-    }
-
-    [Fact]
-    public async Task GetCustomerByIdAsync_WithInvalidId_ReturnsNull()
-    {
-        // Act
-        var result = await _sut.GetCustomerByIdAsync(Guid.NewGuid());
-
-        // Assert
-        result.Should().BeNull();
-    }
-
-    [Fact]
-    public async Task GetAllCustomersAsync_ReturnsAllDemoCustomers()
-    {
-        // Act
-        var result = await _sut.GetAllCustomersAsync();
-
-        // Assert
-        result.Should().HaveCount(3);
-        result.Should().Contain(c => c.FirstName == "Sarah");
-        result.Should().Contain(c => c.FirstName == "Michael");
-        result.Should().Contain(c => c.FirstName == "Emily");
-    }
-
-    [Fact]
-    public async Task GetCustomerProfileAsync_WithValidId_ReturnsProfileWithAccounts()
-    {
-        // Act
-        var result = await _sut.GetCustomerProfileAsync(_sarahId);
-
-        // Assert
-        result.Should().NotBeNull();
-        result!.FullName.Should().Be("Sarah Johnson");
-        result.Accounts.Should().HaveCount(2);
-        result.Accounts.Should().Contain(a => a.AccountType == "Checking");
-        result.Accounts.Should().Contain(a => a.AccountType == "Savings");
-    }
-
-    [Fact]
-    public async Task GetCustomerProfileAsync_WithInvalidId_ReturnsNull()
-    {
-        // Act
-        var result = await _sut.GetCustomerProfileAsync(Guid.NewGuid());
-
-        // Assert
-        result.Should().BeNull();
-    }
-
-    #endregion
-
-    #region Account Operations Tests
-
-    [Fact]
-    public async Task GetAccountByIdAsync_WithValidId_ReturnsAccount()
-    {
-        // Act
-        var result = await _sut.GetAccountByIdAsync(_sarahCheckingId);
-
-        // Assert
-        result.Should().NotBeNull();
-        result!.AccountType.Should().Be("Checking");
-        result.AccountName.Should().Be("Primary Checking");
-        result.CustomerId.Should().Be(_sarahId);
-    }
-
-    [Fact]
-    public async Task GetAccountByIdAsync_WithInvalidId_ReturnsNull()
-    {
-        // Act
-        var result = await _sut.GetAccountByIdAsync(Guid.NewGuid());
-
-        // Assert
-        result.Should().BeNull();
-    }
-
-    [Fact]
-    public async Task GetAccountsByCustomerIdAsync_ReturnsCustomerAccounts()
-    {
-        // Act
-        var result = await _sut.GetAccountsByCustomerIdAsync(_sarahId);
-
-        // Assert
-        result.Should().HaveCount(2);
-        result.Should().OnlyContain(a => a.CustomerId == _sarahId);
-    }
-
-    [Fact]
-    public async Task GetAccountSummariesByCustomerIdAsync_ReturnsMaskedAccountNumbers()
-    {
-        // Act
-        var result = await _sut.GetAccountSummariesByCustomerIdAsync(_sarahId);
-
-        // Assert
-        result.Should().HaveCount(2);
-        result.Should().OnlyContain(a => a.AccountNumber.StartsWith("****"));
-    }
-
-    #endregion
-
-    #region Transaction Operations Tests
+    #region GetTransactionsByAccountIdAsync Tests
 
     [Fact]
     public async Task GetTransactionsByAccountIdAsync_ReturnsTransactionsOrderedByDate()
@@ -159,18 +44,52 @@ public class BankingServiceTests
         result.Should().HaveCountLessOrEqualTo(2);
     }
 
+    [Fact]
+    public async Task GetTransactionsByAccountIdAsync_WithInvalidAccountId_ReturnsEmptyList()
+    {
+        // Act
+        var result = await _sut.GetTransactionsByAccountIdAsync(Guid.NewGuid());
+
+        // Assert
+        result.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetTransactionsByAccountIdAsync_ReturnsTransactionsForCorrectAccount()
+    {
+        // Act
+        var result = await _sut.GetTransactionsByAccountIdAsync(_sarahCheckingId);
+
+        // Assert
+        result.Should().OnlyContain(t => t.AccountId == _sarahCheckingId);
+    }
+
     #endregion
 
-    #region Transfer Tests
+    #region GetTransactionByIdAsync Tests
+
+    [Fact]
+    public async Task GetTransactionByIdAsync_WithInvalidId_ReturnsNull()
+    {
+        // Act
+        var result = await _sut.GetTransactionByIdAsync(Guid.NewGuid());
+
+        // Assert
+        result.Should().BeNull();
+    }
+
+    #endregion
+
+    #region TransferFundsAsync Tests
 
     [Fact]
     public async Task TransferFundsAsync_WithValidRequest_TransfersFunds()
     {
         // Arrange
-        var fromAccountBefore = await _sut.GetAccountByIdAsync(_sarahCheckingId);
-        var toAccountBefore = await _sut.GetAccountByIdAsync(_sarahSavingsId);
-        var fromBalanceBefore = fromAccountBefore!.Balance;
-        var toBalanceBefore = toAccountBefore!.Balance;
+        var fromAccountBefore = _dataStore.Accounts.First(a => a.Id == _sarahCheckingId);
+        var toAccountBefore = _dataStore.Accounts.First(a => a.Id == _sarahSavingsId);
+        var fromBalanceBefore = fromAccountBefore.Balance;
+        var toBalanceBefore = toAccountBefore.Balance;
         var transferAmount = 100.00m;
 
         var request = new TransferRequest
@@ -191,11 +110,11 @@ public class BankingServiceTests
         result.FromTransaction.Should().NotBeNull();
         result.ToTransaction.Should().NotBeNull();
 
-        var fromAccountAfter = await _sut.GetAccountByIdAsync(_sarahCheckingId);
-        var toAccountAfter = await _sut.GetAccountByIdAsync(_sarahSavingsId);
+        var fromAccountAfter = _dataStore.Accounts.First(a => a.Id == _sarahCheckingId);
+        var toAccountAfter = _dataStore.Accounts.First(a => a.Id == _sarahSavingsId);
 
-        fromAccountAfter!.Balance.Should().Be(fromBalanceBefore - transferAmount);
-        toAccountAfter!.Balance.Should().Be(toBalanceBefore + transferAmount);
+        fromAccountAfter.Balance.Should().Be(fromBalanceBefore - transferAmount);
+        toAccountAfter.Balance.Should().Be(toBalanceBefore + transferAmount);
     }
 
     [Fact]
@@ -293,16 +212,56 @@ public class BankingServiceTests
         result.Message.Should().Be("One or both accounts not found");
     }
 
+    [Fact]
+    public async Task TransferFundsAsync_CreatesDebitTransaction()
+    {
+        // Arrange
+        var request = new TransferRequest
+        {
+            FromAccountId = _sarahCheckingId,
+            ToAccountId = _sarahSavingsId,
+            Amount = 50.00m
+        };
+
+        // Act
+        var result = await _sut.TransferFundsAsync(request);
+
+        // Assert
+        result.FromTransaction.Should().NotBeNull();
+        result.FromTransaction!.TransactionType.Should().Be("Debit");
+        result.FromTransaction.Category.Should().Be("Transfer");
+    }
+
+    [Fact]
+    public async Task TransferFundsAsync_CreatesCreditTransaction()
+    {
+        // Arrange
+        var request = new TransferRequest
+        {
+            FromAccountId = _sarahCheckingId,
+            ToAccountId = _sarahSavingsId,
+            Amount = 50.00m
+        };
+
+        // Act
+        var result = await _sut.TransferFundsAsync(request);
+
+        // Assert
+        result.ToTransaction.Should().NotBeNull();
+        result.ToTransaction!.TransactionType.Should().Be("Credit");
+        result.ToTransaction.Category.Should().Be("Transfer");
+    }
+
     #endregion
 
-    #region Deposit Tests
+    #region DepositAsync Tests
 
     [Fact]
     public async Task DepositAsync_WithValidRequest_DepositsAndCreatesTransaction()
     {
         // Arrange
-        var accountBefore = await _sut.GetAccountByIdAsync(_sarahCheckingId);
-        var balanceBefore = accountBefore!.Balance;
+        var accountBefore = _dataStore.Accounts.First(a => a.Id == _sarahCheckingId);
+        var balanceBefore = accountBefore.Balance;
         var depositAmount = 500.00m;
 
         var request = new DepositRequest
@@ -322,8 +281,8 @@ public class BankingServiceTests
         result.Amount.Should().Be(depositAmount);
         result.Description.Should().Be("Test deposit");
 
-        var accountAfter = await _sut.GetAccountByIdAsync(_sarahCheckingId);
-        accountAfter!.Balance.Should().Be(balanceBefore + depositAmount);
+        var accountAfter = _dataStore.Accounts.First(a => a.Id == _sarahCheckingId);
+        accountAfter.Balance.Should().Be(balanceBefore + depositAmount);
     }
 
     [Fact]
@@ -395,16 +354,34 @@ public class BankingServiceTests
         result.Should().BeNull();
     }
 
+    [Fact]
+    public async Task DepositAsync_GeneratesReferenceNumber()
+    {
+        // Arrange
+        var request = new DepositRequest
+        {
+            AccountId = _sarahCheckingId,
+            Amount = 100.00m
+        };
+
+        // Act
+        var result = await _sut.DepositAsync(request);
+
+        // Assert
+        result.Should().NotBeNull();
+        result!.ReferenceNumber.Should().StartWith("TRB");
+    }
+
     #endregion
 
-    #region Withdrawal Tests
+    #region WithdrawAsync Tests
 
     [Fact]
     public async Task WithdrawAsync_WithValidRequest_WithdrawsAndCreatesTransaction()
     {
         // Arrange
-        var accountBefore = await _sut.GetAccountByIdAsync(_sarahCheckingId);
-        var balanceBefore = accountBefore!.Balance;
+        var accountBefore = _dataStore.Accounts.First(a => a.Id == _sarahCheckingId);
+        var balanceBefore = accountBefore.Balance;
         var withdrawAmount = 100.00m;
 
         var request = new WithdrawalRequest
@@ -423,8 +400,8 @@ public class BankingServiceTests
         result.Category.Should().Be("Withdrawal");
         result.Amount.Should().Be(withdrawAmount);
 
-        var accountAfter = await _sut.GetAccountByIdAsync(_sarahCheckingId);
-        accountAfter!.Balance.Should().Be(balanceBefore - withdrawAmount);
+        var accountAfter = _dataStore.Accounts.First(a => a.Id == _sarahCheckingId);
+        accountAfter.Balance.Should().Be(balanceBefore - withdrawAmount);
     }
 
     [Fact]
@@ -476,6 +453,42 @@ public class BankingServiceTests
 
         // Assert
         result.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task WithdrawAsync_WithDefaultDescription_UsesCashWithdrawal()
+    {
+        // Arrange
+        var request = new WithdrawalRequest
+        {
+            AccountId = _sarahCheckingId,
+            Amount = 50.00m
+        };
+
+        // Act
+        var result = await _sut.WithdrawAsync(request);
+
+        // Assert
+        result.Should().NotBeNull();
+        result!.Description.Should().Be("Cash Withdrawal");
+    }
+
+    [Fact]
+    public async Task WithdrawAsync_GeneratesReferenceNumber()
+    {
+        // Arrange
+        var request = new WithdrawalRequest
+        {
+            AccountId = _sarahCheckingId,
+            Amount = 50.00m
+        };
+
+        // Act
+        var result = await _sut.WithdrawAsync(request);
+
+        // Assert
+        result.Should().NotBeNull();
+        result!.ReferenceNumber.Should().StartWith("TRB");
     }
 
     #endregion
