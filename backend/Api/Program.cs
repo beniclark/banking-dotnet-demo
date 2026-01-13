@@ -20,6 +20,7 @@ builder.Services.AddDbContext<BankingDbContext>(options =>
 builder.Services.AddScoped<ICustomerService, CustomerService>();
 builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddScoped<ITransactionService, TransactionService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -71,6 +72,19 @@ app.UseHttpsRedirection();
 
 // API Routes
 var api = app.MapGroup("/api");
+
+// Authentication endpoints
+api.MapPost("/auth/login", async (LoginRequest request, IAuthService authService) =>
+{
+    var result = await authService.LoginAsync(request);
+    if (!result.Success)
+    {
+        // Return 400 for validation errors, 401 for authentication failures
+        var statusCode = result.Message.Contains("valid email") ? 400 : 401;
+        return statusCode == 400 ? Results.BadRequest(result) : Results.Unauthorized();
+    }
+    return Results.Ok(result);
+}).WithName("Login").WithTags("Authentication");
 
 // Customer endpoints
 api.MapGet("/customers", async (ICustomerService customerService) =>

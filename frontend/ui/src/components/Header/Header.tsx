@@ -1,4 +1,5 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 import './Header.css';
 
 interface HeaderProps {
@@ -6,6 +7,14 @@ interface HeaderProps {
 }
 
 export function Header({ customerName }: HeaderProps) {
+  const navigate = useNavigate();
+  const { logout } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
+
   return (
     <header className="header">
       <div className="header-content">
@@ -30,6 +39,9 @@ export function Header({ customerName }: HeaderProps) {
         {customerName && (
           <div className="user-info">
             <span className="user-greeting">Welcome, {customerName}</span>
+            <button onClick={handleLogout} className="logout-button">
+              Logout
+            </button>
           </div>
         )}
       </div>

@@ -167,6 +167,9 @@ The frontend will start at `http://localhost:5173`
 
 ## 📡 API Endpoints
 
+### Authentication
+- `POST /api/auth/login` - Authenticate user with email
+
 ### Customers
 - `GET /api/customers` - Get all customers
 - `GET /api/customers/{id}` - Get customer by ID
@@ -190,7 +193,7 @@ The frontend will start at `http://localhost:5173`
 
 ## 👥 Demo Customers
 
-The application comes with three pre-configured demo customers:
+The application comes with three pre-configured demo customers. **You must log in to access the application.**
 
 | Customer | Email | Customer Number |
 |----------|-------|-----------------|
@@ -198,10 +201,18 @@ The application comes with three pre-configured demo customers:
 | Michael Chen | michael.chen@email.com | TRB-100002 |
 | Emily Rodriguez | emily.rodriguez@email.com | TRB-100003 |
 
-**Default demo user:** Sarah Johnson (ID: `11111111-1111-1111-1111-111111111111`)
+### Logging In
+
+1. Navigate to `http://localhost:5173` (the app will redirect to the login page)
+2. Enter one of the demo email addresses above, or use the quick login buttons
+3. Click "Log In" to access your account
+4. Use the "Logout" button in the header to log out
+
+**Note:** This is a demo application with simplified authentication - only email addresses are required (no passwords).
 
 ## 🎯 Features
 
+- **User Authentication** - Secure login with email-based authentication
 - **Dashboard** - Overview of accounts and recent transactions
 - **Account Management** - View account details and balances
 - **Fund Transfers** - Transfer money between accounts

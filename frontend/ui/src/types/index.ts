@@ -86,3 +86,13 @@ export interface WithdrawalRequest {
   amount: number;
   description: string;
 }
+
+export interface LoginRequest {
+  email: string;
+}
+
+export interface LoginResponse {
+  success: boolean;
+  message: string;
+  customer?: CustomerProfile;
+}
