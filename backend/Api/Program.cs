@@ -20,6 +20,7 @@ builder.Services.AddDbContext<BankingDbContext>(options =>
 builder.Services.AddScoped<ICustomerService, CustomerService>();
 builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddScoped<ITransactionService, TransactionService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -71,6 +72,13 @@ app.UseHttpsRedirection();
 
 // API Routes
 var api = app.MapGroup("/api");
+
+// Authentication endpoints
+api.MapPost("/auth/login", async (LoginRequest request, IAuthService authService) =>
+{
+    var result = await authService.LoginAsync(request);
+    return result.Success ? Results.Ok(result) : Results.Unauthorized();
+}).WithName("Login").WithTags("Authentication");
 
 // Customer endpoints
 api.MapGet("/customers", async (ICustomerService customerService) =>

@@ -18,10 +18,12 @@ public static class DatabaseSeeder
         var customers = GetSeedCustomers();
         var accounts = GetSeedAccounts();
         var transactions = GetSeedTransactions();
+        var users = GetSeedUsers();
 
         context.Customers.AddRange(customers);
         context.Accounts.AddRange(accounts);
         context.Transactions.AddRange(transactions);
+        context.Users.AddRange(users);
         context.SaveChanges();
     }
 
@@ -351,5 +353,45 @@ public static class DatabaseSeeder
         });
 
         return transactions;
+    }
+
+    private static List<User> GetSeedUsers()
+    {
+        // Demo password for all users: "password123"
+        var passwordHash = ThreeRiversBank.Api.Services.AuthService.HashPassword("password123");
+        
+        return new List<User>
+        {
+            new()
+            {
+                Id = Guid.Parse("99999991-9999-9999-9999-999999999991"),
+                Username = "sarah.johnson",
+                Email = "sarah.johnson@email.com",
+                PasswordHash = passwordHash,
+                CustomerId = Guid.Parse("11111111-1111-1111-1111-111111111111"),
+                CreatedDate = new DateTime(2019, 6, 10),
+                IsActive = true
+            },
+            new()
+            {
+                Id = Guid.Parse("99999992-9999-9999-9999-999999999992"),
+                Username = "michael.chen",
+                Email = "michael.chen@email.com",
+                PasswordHash = passwordHash,
+                CustomerId = Guid.Parse("22222222-2222-2222-2222-222222222222"),
+                CreatedDate = new DateTime(2020, 2, 15),
+                IsActive = true
+            },
+            new()
+            {
+                Id = Guid.Parse("99999993-9999-9999-9999-999999999993"),
+                Username = "emily.rodriguez",
+                Email = "emily.rodriguez@email.com",
+                PasswordHash = passwordHash,
+                CustomerId = Guid.Parse("33333333-3333-3333-3333-333333333333"),
+                CreatedDate = new DateTime(2021, 9, 1),
+                IsActive = true
+            }
+        };
     }
 }
