@@ -8,6 +8,8 @@ import type {
   TransferResult,
   DepositRequest,
   WithdrawalRequest,
+  LoginRequest,
+  LoginResponse,
 } from '../types';
 
 const API_BASE_URL = 'http://localhost:5000/api';
@@ -20,6 +22,12 @@ const apiClient = axios.create({
 });
 
 export const bankingApi = {
+  // Authentication endpoints
+  login: async (request: LoginRequest): Promise<LoginResponse> => {
+    const response = await apiClient.post<LoginResponse>('/auth/login', request);
+    return response.data;
+  },
+
   // Customer endpoints
   getAllCustomers: async (): Promise<Customer[]> => {
     const response = await apiClient.get<Customer[]>('/customers');

@@ -1,25 +1,29 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 import { Header, AccountCard, TransactionList } from '../../components';
 import { bankingApi } from '../../services/bankingApi';
 import type { CustomerProfile, Transaction } from '../../types';
 import './Dashboard.css';
 
-// Demo customer ID - Sarah Johnson
-const DEMO_CUSTOMER_ID = '11111111-1111-1111-1111-111111111111';
-
 export function Dashboard() {
   const navigate = useNavigate();
-  const [profile, setProfile] = useState<CustomerProfile | null>(null);
+  const { customer } = useAuth();
+  const [profile, setProfile] = useState<CustomerProfile | null>(customer);
   const [recentTransactions, setRecentTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
+      if (!customer) {
+        setLoading(false);
+        return;
+      }
+
       try {
         setLoading(true);
-        const customerProfile = await bankingApi.getCustomerProfile(DEMO_CUSTOMER_ID);
+        const customerProfile = await bankingApi.getCustomerProfile(customer.id);
         setProfile(customerProfile);
 
         // Get transactions from the first account
@@ -39,7 +43,7 @@ export function Dashboard() {
     };
 
     fetchData();
-  }, []);
+  }, [customer]);
 
   const calculateTotalBalance = () => {
     if (!profile) return 0;
