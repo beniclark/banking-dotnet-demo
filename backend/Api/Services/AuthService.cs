@@ -66,15 +66,17 @@ public class AuthService : IAuthService
 
     private static bool VerifyPassword(string password, string passwordHash)
     {
-        // Simple comparison for demo purposes
-        // In production, use proper password hashing like BCrypt or PBKDF2
+        // SECURITY NOTE: This simple comparison is for demo purposes only
+        // In production, use proper password hashing verification with BCrypt, scrypt, or Argon2
         return HashPassword(password) == passwordHash;
     }
 
     public static string HashPassword(string password)
     {
-        // Simple hash for demo purposes
-        // In production, use proper password hashing like BCrypt or PBKDF2
+        // SECURITY NOTE: SHA256 without salt is NOT secure for production use
+        // It's vulnerable to rainbow table attacks and should not be used for real password storage
+        // For production, use BCrypt, scrypt, or Argon2 with proper salt
+        // This simple implementation is for demo/educational purposes only
         using var sha256 = System.Security.Cryptography.SHA256.Create();
         var bytes = System.Text.Encoding.UTF8.GetBytes(password);
         var hash = sha256.ComputeHash(bytes);

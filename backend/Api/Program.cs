@@ -77,7 +77,12 @@ var api = app.MapGroup("/api");
 api.MapPost("/auth/login", async (LoginRequest request, IAuthService authService) =>
 {
     var result = await authService.LoginAsync(request);
-    return result.Success ? Results.Ok(result) : Results.Unauthorized();
+    if (!result.Success)
+    {
+        // Return generic unauthorized response without exposing error details
+        return Results.Json(new { success = false, message = "Unauthorized" }, statusCode: 401);
+    }
+    return Results.Ok(result);
 }).WithName("Login").WithTags("Authentication");
 
 // Customer endpoints
