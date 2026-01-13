@@ -12,6 +12,7 @@ public class BankingDbContext : DbContext
     public DbSet<Customer> Customers => Set<Customer>();
     public DbSet<Account> Accounts => Set<Account>();
     public DbSet<Transaction> Transactions => Set<Transaction>();
+    public DbSet<User> Users => Set<User>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -58,6 +59,18 @@ public class BankingDbContext : DbContext
             entity.HasIndex(t => t.AccountId);
             entity.HasIndex(t => t.TransactionDate);
             entity.HasIndex(t => t.ReferenceNumber);
+        });
+
+        // Configure User entity
+        modelBuilder.Entity<User>(entity =>
+        {
+            entity.HasKey(u => u.Id);
+            entity.Property(u => u.Username).IsRequired().HasMaxLength(100);
+            entity.Property(u => u.Email).IsRequired().HasMaxLength(255);
+            entity.Property(u => u.PasswordHash).IsRequired();
+            entity.HasIndex(u => u.Username).IsUnique();
+            entity.HasIndex(u => u.Email).IsUnique();
+            entity.HasIndex(u => u.CustomerId);
         });
     }
 }

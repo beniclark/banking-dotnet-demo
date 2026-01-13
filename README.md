@@ -33,16 +33,19 @@ banking-dotnet-demo/
 │       ├── Models/
 │       │   ├── Account.cs
 │       │   ├── Customer.cs
-│       │   └── Transaction.cs
+│       │   ├── Transaction.cs
+│       │   └── User.cs
 │       ├── Services/
 │       │   ├── Data/
 │       │   │   ├── BankingDbContext.cs    # EF Core DbContext
 │       │   │   └── DatabaseSeeder.cs      # Seed data initialization
 │       │   ├── Interfaces/
 │       │   │   ├── IAccountService.cs
+│       │   │   ├── IAuthService.cs
 │       │   │   ├── ICustomerService.cs
 │       │   │   └── ITransactionService.cs
 │       │   ├── AccountService.cs          # Account domain operations
+│       │   ├── AuthService.cs             # Authentication operations
 │       │   ├── CustomerService.cs         # Customer domain operations
 │       │   └── TransactionService.cs      # Transaction domain operations
 │       └── Program.cs
@@ -50,6 +53,7 @@ banking-dotnet-demo/
 │       ├── TestDatabaseFactory.cs         # Test database setup
 │       └── Services/
 │           ├── AccountServiceTests.cs
+│           ├── AuthServiceTests.cs
 │           ├── CustomerServiceTests.cs
 │           └── TransactionServiceTests.cs
 ├── frontend/
@@ -65,10 +69,11 @@ banking-dotnet-demo/
 
 ## 🏛️ Service Architecture
 
-The backend follows a **domain-driven modular architecture** with three main services:
+The backend follows a **domain-driven modular architecture** with four main services:
 
 | Service | Responsibility |
 |---------|----------------|
+| `AuthService` | User authentication and login validation |
 | `CustomerService` | Customer lookup, profile management |
 | `AccountService` | Account queries, balance summaries |
 | `TransactionService` | Transactions, transfers, deposits, withdrawals |
@@ -108,6 +113,16 @@ erDiagram
         string CustomerNumber UK
     }
     
+    User {
+        guid Id PK
+        string Username UK
+        string Email UK
+        string PasswordHash
+        guid CustomerId FK
+        datetime CreatedDate
+        bool IsActive
+    }
+    
     Account {
         guid Id PK
         string AccountNumber UK
@@ -135,6 +150,7 @@ erDiagram
         string ReferenceNumber
     }
     
+    Customer ||--o| User : "has"
     Customer ||--o{ Account : "has"
     Account ||--o{ Transaction : "has"
 ```
@@ -167,6 +183,9 @@ The frontend will start at `http://localhost:5173`
 
 ## 📡 API Endpoints
 
+### Authentication
+- `POST /api/auth/login` - User login (returns customer ID on success)
+
 ### Customers
 - `GET /api/customers` - Get all customers
 - `GET /api/customers/{id}` - Get customer by ID
@@ -190,18 +209,51 @@ The frontend will start at `http://localhost:5173`
 
 ## 👥 Demo Customers
 
-The application comes with three pre-configured demo customers:
+The application comes with three pre-configured demo customers with login credentials:
 
-| Customer | Email | Customer Number |
-|----------|-------|-----------------|
-| Sarah Johnson | sarah.johnson@email.com | TRB-100001 |
-| Michael Chen | michael.chen@email.com | TRB-100002 |
-| Emily Rodriguez | emily.rodriguez@email.com | TRB-100003 |
+| Customer | Username | Email | Password | Customer Number |
+|----------|----------|-------|----------|-----------------|
+| Sarah Johnson | sarah.johnson | sarah.johnson@email.com | password123 | TRB-100001 |
+| Michael Chen | michael.chen | michael.chen@email.com | password123 | TRB-100002 |
+| Emily Rodriguez | emily.rodriguez | emily.rodriguez@email.com | password123 | TRB-100003 |
+
+**Note:** Users can login with either their username or email address.
 
 **Default demo user:** Sarah Johnson (ID: `11111111-1111-1111-1111-111111111111`)
 
+## 🔐 Authentication
+
+The application includes a simple authentication system:
+
+1. **Login Endpoint**: `POST /api/auth/login`
+   - Accepts username/email and password
+   - Returns customer ID and name on successful authentication
+   - Returns 401 Unauthorized for invalid credentials
+
+2. **Password Storage**: 
+   - Passwords are hashed using SHA256 (for demo purposes)
+   - In production, use proper password hashing like BCrypt or PBKDF2
+
+**Example Login Request:**
+```bash
+curl -X POST http://localhost:5000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"sarah.johnson","password":"password123"}'
+```
+
+**Example Login Response:**
+```json
+{
+  "success": true,
+  "message": "Login successful",
+  "customerId": "11111111-1111-1111-1111-111111111111",
+  "customerName": "Sarah Johnson"
+}
+```
+
 ## 🎯 Features
 
+- **User Authentication** - Login with username/email and password
 - **Dashboard** - Overview of accounts and recent transactions
 - **Account Management** - View account details and balances
 - **Fund Transfers** - Transfer money between accounts
@@ -216,11 +268,12 @@ The application comes with three pre-configured demo customers:
 ## 💡 Copilot Demo Ideas
 
 1. **Add new feature**: "Add a bill payment feature"
-2. **Add authentication**: "Implement JWT authentication"
+2. **Add JWT tokens**: "Implement JWT token-based authentication"
 3. **Migrate database**: "Connect to Azure SQL database"
 4. **Add tests**: "Write unit tests for the banking service"
 5. **Add validation**: "Add input validation to the transfer endpoint"
 6. **Refactor code**: "Extract account operations to a separate service"
+7. **Add password reset**: "Implement password reset functionality"
 
 ## 📝 License
 
