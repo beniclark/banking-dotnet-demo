@@ -77,7 +77,13 @@ var api = app.MapGroup("/api");
 api.MapPost("/auth/login", async (LoginRequest request, IAuthService authService) =>
 {
     var result = await authService.LoginAsync(request);
-    return result.Success ? Results.Ok(result) : Results.Unauthorized();
+    if (!result.Success)
+    {
+        // Return 400 for validation errors, 401 for authentication failures
+        var statusCode = result.Message.Contains("valid email") ? 400 : 401;
+        return statusCode == 400 ? Results.BadRequest(result) : Results.Unauthorized();
+    }
+    return Results.Ok(result);
 }).WithName("Login").WithTags("Authentication");
 
 // Customer endpoints

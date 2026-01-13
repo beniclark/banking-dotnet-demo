@@ -26,10 +26,15 @@ export function Login() {
       } else {
         setError(response.message || 'Login failed. Please try again.');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Login error:', err);
-      if (err.response?.status === 401) {
-        setError('No account found with this email address.');
+      if (err && typeof err === 'object' && 'response' in err) {
+        const error = err as { response?: { status?: number } };
+        if (error.response?.status === 401) {
+          setError('No account found with this email address.');
+        } else {
+          setError('Unable to connect to the server. Please try again later.');
+        }
       } else {
         setError('Unable to connect to the server. Please try again later.');
       }
